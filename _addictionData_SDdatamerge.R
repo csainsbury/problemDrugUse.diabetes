@@ -133,6 +133,8 @@ for (j in seq(1, nrow(interest_addiction_set),1)) {
     matching_individual <- matchingSet[sample(1:nrow(matchingSet),1),]
     interest_addiction_set$control_ID[j] <- matching_individual$CHI
     interest_addiction_set$control_
+    
+    __testLine
   }
   
   print(nrow(matchingSet))
