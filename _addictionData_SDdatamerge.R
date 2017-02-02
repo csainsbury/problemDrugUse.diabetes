@@ -49,7 +49,7 @@ table(allDM_addiction_merge$DeathDate)
 ## matching function
 
 diagnosisDatasetDT<-data.table(diagnosisDataset)
-    diagnosisDatasetDT$age_at_010116 <- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - (as.numeric(as.POSIXct(diagnosisDatasetDT$BirthDate, format="%Y-%m-%d", tz="GMT")))) / (60*60*24*365.25)
+    diagnosisDatasetDT$age_at_010116 <- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - (as.numeric(as.POSIXct(diagnosisDatasetDT$BirthDate, format="%Y-%m-%d", tz="GMT")))) / (60*60*24*365.25)
     
     diagnosisDatasetDT$diagnosisDateUnix<-as.numeric(as.POSIXct(diagnosisDatasetDT$DateOfDiagnosisDiabetes_Date, format="%Y-%m-%d", tz="GMT"))
     # diabetes duration at 010116
@@ -84,7 +84,7 @@ interest_addiction_set$dmType_match <- ifelse(interest_addiction_set$DMtype == "
 
 # age at 010116
 interest_addiction_set$dob <- extractDOBFuntion(interest_addiction_set$CHI)
-interest_addiction_set$age_at_010116 <- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$dob) / (60*60*24*365.25)
+interest_addiction_set$age_at_010111 <- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$dob) / (60*60*24*365.25)
 
 ## impute missing diagnosis date with median value
 interest_addiction_set[is.na(interest_addiction_set$diagnosisDateUnix),]$diagnosisDateUnix <- median(interest_addiction_set[is.na(interest_addiction_set$diagnosisDateUnix)==FALSE,]$diagnosisDateUnix)
@@ -105,13 +105,15 @@ diabetesDurationWindow <- 5
 reportingFrame<-diagnosisDatasetDT[1,]
 reportingFrame <- reportingFrame[-1,]
 
+interest_addiction_set$casePairNumber <- seq(1,nrow(interest_addiction_set),1)
+
 set.seed(1234)
 
 for (j in seq(1, nrow(interest_addiction_set),1)) {
   
   # print(j)
   
-  match_age <- interest_addiction_set$age_at_010116[j]
+  match_age <- interest_addiction_set$age_at_010111[j]
   match_BMI <- interest_addiction_set$BMI[j]
   match_DMtype <- interest_addiction_set$dmType_match[j]
  # match_depQuint <- interest_addiction_set$depQuint[j]
@@ -129,17 +131,16 @@ for (j in seq(1, nrow(interest_addiction_set),1)) {
                                 age_at_010116 > (match_age - (ageWindow / 2)) & age_at_010116 < (match_age + (ageWindow / 2)) &
                                 diabetesDuration_at_010116 > (match_diabetesDuration - (diabetesDurationWindow / 2)) & diabetesDuration_at_010116 < (match_diabetesDuration + (diabetesDurationWindow / 2))]
   
+  matchingSet$controlPairNumber <- 0
+  
   if (nrow(matchingSet)>0) {
     matching_individual <- matchingSet[sample(1:nrow(matchingSet),1),]
-    interest_addiction_set$control_ID[j] <- matching_individual$CHI
-    interest_addiction_set$control_
-    
-    __testLine
+    matching_individual$controlPairNumber <- j 
   }
   
   print(nrow(matchingSet))
   
 if (nrow(matchingSet)>0) {
-  reportingFrame<-rbind(reportingFrame,matchingSet[1])
+  reportingFrame<-rbind(reportingFrame,matching_individual[1])
 }  
 }
