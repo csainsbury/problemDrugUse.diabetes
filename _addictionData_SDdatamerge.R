@@ -30,7 +30,6 @@ extractDOBFuntion <- function(input_CHI) {
 }
 
 # OPfilename <- paste("../GlCoSy/source/addictionData.csv",sep="")
-
 OPfilename <- paste("~/R/GlCoSy/source/all_ORT.csv",sep="")
 addictionData<-read.csv(OPfilename, header=TRUE , sep="," , row.names=NULL)
 colnames(addictionData) <- c("CHI")
@@ -49,11 +48,11 @@ table(allDM_addiction_merge$DeathDate)
 ## matching function
 
 diagnosisDatasetDT<-data.table(diagnosisDataset)
-    diagnosisDatasetDT$age_at_010116 <- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - (as.numeric(as.POSIXct(diagnosisDatasetDT$BirthDate, format="%Y-%m-%d", tz="GMT")))) / (60*60*24*365.25)
+    diagnosisDatasetDT$age_at_010111 <- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - (as.numeric(as.POSIXct(diagnosisDatasetDT$BirthDate, format="%Y-%m-%d", tz="GMT")))) / (60*60*24*365.25)
     
     diagnosisDatasetDT$diagnosisDateUnix<-as.numeric(as.POSIXct(diagnosisDatasetDT$DateOfDiagnosisDiabetes_Date, format="%Y-%m-%d", tz="GMT"))
-    # diabetes duration at 010116
-    diagnosisDatasetDT$diabetesDuration_at_010116<- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - diagnosisDatasetDT$diagnosisDateUnix) / (60*60*24*365.25)
+    # diabetes duration at 010111
+    diagnosisDatasetDT$diabetesDuration_at_010111<- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - diagnosisDatasetDT$diagnosisDateUnix) / (60*60*24*365.25)
     
     diagnosisDatasetDT$dmType_match <- ifelse(diagnosisDatasetDT$DiabetesMellitusType_Mapped == "Type 1 Diabetes Mellitus",1,0)
     diagnosisDatasetDT$sex<-ifelse(diagnosisDatasetDT$CurrentGender_Mapped=="Male",1,0)
@@ -82,15 +81,15 @@ interest_addiction_set$diagnosisDateUnix<-as.numeric(as.POSIXct(interest_addicti
 interest_addiction_set$DeathDateUnix<-as.numeric(as.POSIXct(interest_addiction_set$deathDate, format="%Y-%m-%d", tz="GMT"))
 interest_addiction_set$dmType_match <- ifelse(interest_addiction_set$DMtype == "Type 1 Diabetes Mellitus",1,0)
 
-# age at 010116
+# age at 010111
 interest_addiction_set$dob <- extractDOBFuntion(interest_addiction_set$CHI)
-interest_addiction_set$age_at_010111 <- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$dob) / (60*60*24*365.25)
+interest_addiction_set$age_at_010111 <- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$dob) / (60*60*24*365.25)
 
 ## impute missing diagnosis date with median value
 interest_addiction_set[is.na(interest_addiction_set$diagnosisDateUnix),]$diagnosisDateUnix <- median(interest_addiction_set[is.na(interest_addiction_set$diagnosisDateUnix)==FALSE,]$diagnosisDateUnix)
 
-# diabetes duration at 010116
-interest_addiction_set$diabetesDuration_at_010116<- ((as.numeric(as.POSIXct("2016-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$diagnosisDateUnix) / (60*60*24*365.25)
+# diabetes duration at 010111
+interest_addiction_set$diabetesDuration_at_010111<- ((as.numeric(as.POSIXct("2011-01-01", format="%Y-%m-%d", tz="GMT"))) - interest_addiction_set$diagnosisDateUnix) / (60*60*24*365.25)
 
 # mark the ID in the drug use pool as not for control use
 mm<-match(diagnosisDatasetDT$PatId, interest_addiction_set$CHI, nomatch = 0, incomparables = NULL)
@@ -103,6 +102,7 @@ BMIWindow <- 2
 diabetesDurationWindow <- 5
 
 reportingFrame<-diagnosisDatasetDT[1,]
+reportingFrame$controlPairNumber <- 0
 reportingFrame <- reportingFrame[-1,]
 
 interest_addiction_set$casePairNumber <- seq(1,nrow(interest_addiction_set),1)
@@ -117,7 +117,7 @@ for (j in seq(1, nrow(interest_addiction_set),1)) {
   match_BMI <- interest_addiction_set$BMI[j]
   match_DMtype <- interest_addiction_set$dmType_match[j]
  # match_depQuint <- interest_addiction_set$depQuint[j]
-  match_diabetesDuration <- interest_addiction_set$diabetesDuration_at_010116[j]
+  match_diabetesDuration <- interest_addiction_set$diabetesDuration_at_010111[j]
   match_sex <- interest_addiction_set$sex[j]
  # match_smoking_status <- interest_addiction_set$smoking[j]
   
@@ -128,8 +128,8 @@ for (j in seq(1, nrow(interest_addiction_set),1)) {
                                 # CurrentTobaccoNicotineConsumptionStatus_Mapped == match_smoking_status &
                                 dmType_match == match_DMtype &
                                 BMI > match_BMI - (BMIWindow / 2) & BMI < match_BMI + (BMIWindow / 2) &
-                                age_at_010116 > (match_age - (ageWindow / 2)) & age_at_010116 < (match_age + (ageWindow / 2)) &
-                                diabetesDuration_at_010116 > (match_diabetesDuration - (diabetesDurationWindow / 2)) & diabetesDuration_at_010116 < (match_diabetesDuration + (diabetesDurationWindow / 2))]
+                                age_at_010111 > (match_age - (ageWindow / 2)) & age_at_010111 < (match_age + (ageWindow / 2)) &
+                                diabetesDuration_at_010111 > (match_diabetesDuration - (diabetesDurationWindow / 2)) & diabetesDuration_at_010111 < (match_diabetesDuration + (diabetesDurationWindow / 2))]
   
   matchingSet$controlPairNumber <- 0
   
@@ -144,3 +144,13 @@ if (nrow(matchingSet)>0) {
   reportingFrame<-rbind(reportingFrame,matching_individual[1])
 }  
 }
+
+# generate rows of combined case/control data
+mergeCaseControl <- merge(reportingFrame, interest_addiction_set, by.x="controlPairNumber", by.y="casePairNumber")
+
+# simplify cols
+mergeCaseControl$BMI.x<-as.numeric(mergeCaseControl$BMI.x)
+
+
+
+
